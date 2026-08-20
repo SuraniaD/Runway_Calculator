@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runway Calculator</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:      #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-1-wash:  rgba(42,120,214,0.10);
+    --series-1-ring:  #cde2fb;
+    --good:           #006300;
+    --card-shadow:    0 1px 2px rgba(11,11,11,0.04), 0 4px 16px rgba(11,11,11,0.04);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:      #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-1-wash:  rgba(57,135,229,0.14);
+    --series-1-ring:  #1a1a19;
+    --good:           #0ca30c;
+    --card-shadow:    0 1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.2);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:      #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-1-wash:  rgba(57,135,229,0.14);
+      --series-1-ring:  #1a1a19;
+      --good:           #0ca30c;
+      --card-shadow:    0 1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.2);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  .top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 21px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    margin: 4px 0 22px;
+  }
+  button.theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  button.theme-toggle:hover { color: var(--text-primary); }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--card-shadow);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 760px) {
+    .inputs-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .inputs-grid { grid-template-columns: 1fr; }
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .field .input-shell {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--page-plane);
+    padding: 0 10px;
+  }
+  .field .input-shell span.prefix {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-right: 2px;
+  }
+  .field input[type="number"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: inherit;
+    padding: 9px 4px;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .field input[type="number"]::-webkit-outer-spin-button,
+  .field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; marger: 0;
+  }
+  .field .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 5px;
+  }
+
+  .stat-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+  }
+  .stat-label {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .hero {
+    font-size: 46px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .hero small {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 4px;
+  }
+  .stat-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+  .stat-sub strong { color: var(--text-primary); font-weight: 600; }
+  .indefinite-note {
+    font-size: 13px;
+    color: var(--good);
+    margin-top: 8px;
+    font-weight: 500;
+  }
+  .side-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: right;
+  }
+  .side-stat .v { font-size: 15px; font-weight: 600; }
+  .side-stat .l { font-size: 11.5px; color: var(--text-muted); }
+
+  .chart-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .chart-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .chart-holder { position: relative; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .axis-label {
+    font-size: 10.5px;
+    fill: var(--text-muted);
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .area-fill { fill: var(--series-1-wash); }
+  .line-path { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .crosshair-line { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .hover-dot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; opacity: 0; pointer-events: none; }
+  .hit-layer { fill: transparent; cursor: crosshair; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    padding: 8px 11px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0;
+    transform: translate(-50%, -110%);
+    white-space: nowrap;
+    transition: opacity 0.08s ease;
+    z-index: 5;
+  }
+  .tooltip .tt-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .tooltip .tt-key {
+    display: inline-block;
+    width: 10px;
+    height: 2px;
+    background: var(--series-1);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .tooltip .tt-burn {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  details.table-toggle { margin-top: 14px; }
+  details.table-toggle summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    outline: none;
+  }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12.5px;
+  }
+  table.data-table th, table.data-table td {
+    text-align: right;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+  }
+  table.data-table th:first-child, table.data-table td:first-child { text-align: left; }
+  table.data-table th { color: var(--text-muted); font-weight: 500; }
+
+  .footnote {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-row">
+    <h1>Runway calculator</h1>
+    <button class="theme-toggle" id="themeToggle" type="button">Dark mode</button>
+  </div>
+  <div class="subtitle">How long your corpus lasts if all cash inflow stops today, based on your monthly burn.</div>
+
+  <div class="card">
+    <div class="inputs-grid">
+      <div class="field">
+        <label for="corpus">Corpus</label>
+        <div class="input-shell">
+          <span class="prefix">₹</span>
+          <input type="number" id="corpus" value="4000000" min="0" step="10000">
+        </div>
+        <div class="hint" id="corpusHint">₹40,00,000</div>
+      </div>
+      <div class="field">
+        <label for="burn">Monthly burn</label>
+        <div class="input-shell">
+          <span class="prefix">₹</span>
+          <input type="number" id="burn" value="55000" min="1" step="1000">
+        </div>
+        <div class="hint" id="burnHint">₹55,000 / month</div>
+      </div>
+      <div class="field">
+        <label for="returnRate">Expected annual return</label>
+        <div class="input-shell">
+          <input type="number" id="returnRate" value="0" min="0" max="30" step="0.5">
+          <span class="prefix">%</span>
+        </div>
+        <div class="hint">On the remaining balance. Leave at 0 for cash sitting idle.</div>
+      </div>
+      <div class="field">
+        <label for="inflationRate">Expected annual inflation</label>
+        <div class="input-shell">
+          <input type="number" id="inflationRate" value="6" min="0" max="20" step="0.5">
+          <span class="prefix">%</span>
+        </div>
+        <div class="hint">Your ₹ burn grows each year to keep the same lifestyle.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stat-row">
+      <div>
+        <div class="stat-label">Runway at current burn rate</div>
+        <div class="hero" id="heroValue" aria-live="polite">— <small>—</small></div>
+        <div class="stat-sub" id="statSub"></div>
+        <div class="indefinite-note" id="indefiniteNote" style="display:none;"></div>
+      </div>
+      <div class="side-stats">
+        <div class="side-stat">
+          <div class="v" id="burnPctValue">—</div>
+          <div class="l">of corpus burned in month 1</div>
+        </div>
+        <div class="side-stat">
+          <div class="v" id="depleteDateValue">—</div>
+          <div class="l">projected depletion</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chart-title">Corpus balance over time</div>
+    <div class="chart-caption" id="chartCaption">Projected balance, month by month, until it hits zero.</div>
+    <div class="chart-holder" id="chartHolder">
+      <svg id="chartSvg" viewBox="0 0 680 260" preserveAspectRatio="xMidYMid meet">
+        <g id="gridGroup"></g>
+        <path id="areaPath" class="area-fill"></path>
+        <path id="linePath" class="line-path"></path>
+        <line id="crosshair" class="crosshair-line" x1="0" y1="0" x2="0" y2="240"></line>
+        <circle id="hoverDot" class="hover-dot" r="5"></circle>
+        <g id="xAxisGroup"></g>
+        <g id="yAxisGroup"></g>
+        <rect id="hitLayer" class="hit-layer" x="0" y="0" width="680" height="240"></rect>
+      </svg>
+      <div class="tooltip" id="tooltip">
+        <div><span class="tt-key"></span><span id="ttMonth"></span></div>
+        <div class="tt-value" id="ttValue"></div>
+        <div id="ttBurn" class="tt-burn"></div>
+      </div>
+    </div>
+
+    <details class="table-toggle">
+      <summary>View as table (yearly snapshots)</summary>
+      <table class="data-table" id="dataTable">
+        <thead><tr><th>Year</th><th>Balance</th><th>Monthly burn that year</th></tr></thead>
+        <tbody id="dataTableBody"></tbody>
+      </table>
+    </details>
+  </div>
+
+  <div class="footnote">
+    Assumes no further contributions. Each month, your expected return compounds on whatever balance remains, then that month's burn is subtracted — and the burn itself grows every year at the inflation rate you set, so it keeps buying the same lifestyle rather than staying fixed in rupee terms. Set inflation to 0 to see a flat, non-adjusted burn instead. This is a planning estimate, not financial advice — actual returns and expenses will vary.
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var corpusInput = document.getElementById('corpus');
+  var burnInput = document.getElementById('burn');
+  var returnInput = document.getElementById('returnRate');
+  var inflationInput = document.getElementById('inflationRate');
+  var corpusHint = document.getElementById('corpusHint');
+  var burnHint = document.getElementById('burnHint');
+  var heroValue = document.getElementById('heroValue');
+  var statSub = document.getElementById('statSub');
+  var indefiniteNote = document.getElementById('indefiniteNote');
+  var burnPctValue = document.getElementById('burnPctValue');
+  var depleteDateValue = document.getElementById('depleteDateValue');
+  var chartCaption = document.getElementById('chartCaption');
+  var themeToggle = document.getElementById('themeToggle');
+
+  var MAX_MONTHS = 600; // 50 year cap
+
+  function indianGroup(numStr) {
+    // numStr: integer digits only, no sign
+    if (numStr.length <= 3) return numStr;
+    var last3 = numStr.slice(-3);
+    var rest = numStr.slice(0, -3);
+    rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    return rest + ',' + last3;
+  }
+
+  function formatINR(value) {
+    var v = Math.round(value);
+    var sign = v < 0 ? '-' : '';
+    v = Math.abs(v);
+    return sign + '₹' + indianGroup(String(v));
+  }
+
+  function formatCompactINR(value) {
+    var v = Math.abs(value);
+    var sign = value < 0 ? '-' : '';
+    if (v >= 10000000) return sign + '₹' + (v / 10000000).toFixed(2).replace(/\.00$/, '') + 'Cr';
+    if (v >= 100000) return sign + '₹' + (v / 100000).toFixed(2).replace(/\.00$/, '') + 'L';
+    if (v >= 1000) return sign + '₹' + (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return sign + '₹' + Math.round(v);
+  }
+
+  function computeSeries(corpus, burn0, annualReturnPct, annualInflationPct) {
+    var r = Math.pow(1 + annualReturnPct / 100, 1 / 12) - 1;
+    var points = [{ month: 0, balance: corpus, burn: burn0 }];
+    var balance = corpus;
+    var month = 0;
+    var depleted = false;
+    while (month < MAX_MONTHS) {
+      month++;
+      var burnThisMonth = burn0 * Math.pow(1 + annualInflationPct / 100, month / 12);
+      balance = balance * (1 + r) - burnThisMonth;
+      if (balance <= 0) {
+        points.push({ month: month, balance: 0, burn: burnThisMonth });
+        depleted = true;
+        break;
+      }
+      points.push({ month: month, balance: balance, burn: burnThisMonth });
+    }
+    return { points: points, depleted: depleted, months: month };
+  }
+
+  function monthsToYM(months) {
+    var whole = Math.floor(months / 12);
+    var rem = Math.round(months - whole * 12);
+    if (rem === 12) { whole += 1; rem = 0; }
+    return { years: whole, months: rem };
+  }
+
+  function monthName(offset) {
+    var d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offset);
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  }
+
+  // ---- chart geometry ----
+  var svg = document.getElementById('chartSvg');
+  var VB_W = 680, VB_H = 260;
+  var PAD = { top: 10, right: 14, bottom: 26, left: 54 };
+  var plotW = VB_W - PAD.left - PAD.right;
+  var plotH = VB_H - PAD.top - PAD.bottom;
+
+  var gridGroup = document.getElementById('gridGroup');
+  var areaPath = document.getElementById('areaPath');
+  var linePath = document.getElementById('linePath');
+  var xAxisGroup = document.getElementById('xAxisGroup');
+  var yAxisGroup = document.getElementById('yAxisGroup');
+  var crosshair = document.getElementById('crosshair');
+  var hoverDot = document.getElementById('hoverDot');
+  var hitLayer = document.getElementById('hitLayer');
+  var tooltip = document.getElementById('tooltip');
+  var chartHolder = document.getElementById('chartHolder');
+  var ttMonth = document.getElementById('ttMonth');
+  var ttValue = document.getElementById('ttValue');
+  var ttBurn = document.getElementById('ttBurn');
+
+  var currentPoints = [];
+  var xScale, yScale;
+
+  function niceMax(v) {
+    if (v <= 0) return 1;
+    var pow = Math.pow(10, Math.floor(Math.log10(v)));
+    var n = v / pow;
+    var nice;
+    if (n <= 1) nice = 1;
+    else if (n <= 2) nice = 2;
+    else if (n <= 5) nice = 5;
+    else nice = 10;
+    return nice * pow;
+  }
+
+  function render(points, depleted) {
+    currentPoints = points;
+    var maxMonth = points[points.length - 1].month;
+    var maxBalance = 0;
+    for (var i = 0; i < points.length; i++) maxBalance = Math.max(maxBalance, points[i].balance);
+    var yMax = niceMax(maxBalance * 1.08);
+
+    xScale = function (m) { return PAD.left + (maxMonth === 0 ? 0 : (m / maxMonth) * plotW); };
+    yScale = function (b) { return PAD.top + plotH - (b / yMax) * plotH; };
+
+    // grid + y axis (4 steps)
+    gridGroup.innerHTML = '';
+    yAxisGroup.innerHTML = '';
+    var steps = 4;
+    for (var s = 0; s <= steps; s++) {
+      var val = (yMax / steps) * s;
+      var y = yScale(val);
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', PAD.left);
+      line.setAttribute('x2', VB_W - PAD.right);
+      line.setAttribute('y1', y);
+      line.setAttribute('y2', y);
+      line.setAttribute('class', 'gridline');
+      gridGroup.appendChild(line);
+
+      var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', PAD.left - 8);
+      label.setAttribute('y', y + 3);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('class', 'axis-label');
+      label.textContent = formatCompactINR(val);
+      yAxisGroup.appendChild(label);
+    }
+
+    // x axis (years)
+    xAxisGroup.innerHTML = '';
+    var maxYears = maxMonth / 12;
+    var yearStep = maxYears <= 5 ? 1 : (maxYears <= 12 ? 2 : (maxYears <= 25 ? 5 : 10));
+    for (var yr = 0; yr <= Math.ceil(maxYears); yr += yearStep) {
+      var mm = Math.min(yr * 12, maxMonth);
+      var x = xScale(mm);
+      var lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('x', x);
+      lbl.setAttribute('y', VB_H - PAD.bottom + 18);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('class', 'axis-label');
+      lbl.textContent = 'Yr ' + yr;
+      xAxisGroup.appendChild(lbl);
+    }
+
+    // baseline
+    var baseline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    baseline.setAttribute('x1', PAD.left);
+    baseline.setAttribute('x2', VB_W - PAD.right);
+    baseline.setAttribute('y1', PAD.top + plotH);
+    baseline.setAttribute('y2', PAD.top + plotH);
+    baseline.setAttribute('class', 'baseline');
+    gridGroup.appendChild(baseline);
+
+    // paths
+    var linePts = points.map(function (p) { return xScale(p.month) + ',' + yScale(p.balance); });
+    linePath.setAttribute('d', 'M' + linePts.join(' L'));
+
+    var areaPts = points.map(function (p) { return xScale(p.month) + ',' + yScale(p.balance); });
+    var areaD = 'M' + xScale(0) + ',' + yScale(0) + ' L' + areaPts.join(' L') +
+      ' L' + xScale(maxMonth) + ',' + (PAD.top + plotH) + ' L' + xScale(0) + ',' + (PAD.top + plotH) + ' Z';
+    areaPath.setAttribute('d', areaD);
+
+    crosshair.setAttribute('y1', PAD.top);
+    crosshair.setAttribute('y2', PAD.top + plotH);
+
+    // table
+    var tbody = document.getElementById('dataTableBody');
+    tbody.innerHTML = '';
+    var maxYearsInt = Math.ceil(maxMonth / 12);
+    for (var ty = 0; ty <= maxYearsInt; ty++) {
+      var tm = Math.min(ty * 12, maxMonth);
+      var pt = points[tm] || points[points.length - 1];
+      var tr = document.createElement('tr');
+      var tdY = document.createElement('td');
+      tdY.textContent = 'Year ' + ty;
+      var tdB = document.createElement('td');
+      tdB.textContent = formatINR(pt.balance);
+      var tdBurn = document.createElement('td');
+      tdBurn.textContent = formatINR(pt.burn) + ' / mo';
+      tr.appendChild(tdY);
+      tr.appendChild(tdB);
+      tr.appendChild(tdBurn);
+      tbody.appendChild(tr);
+    }
+  }
+
+  function pointerToMonth(clientX) {
+    var rect = svg.getBoundingClientRect();
+    var scaleX = VB_W / rect.width;
+    var xInVb = (clientX - rect.left) * scaleX;
+    var maxMonth = currentPoints[currentPoints.length - 1].month;
+    var frac = (xInVb - PAD.left) / plotW;
+    frac = Math.max(0, Math.min(1, frac));
+    return Math.round(frac * maxMonth);
+  }
+
+  function showTooltip(clientX, clientY) {
+    var m = pointerToMonth(clientX);
+    var pt = currentPoints[m];
+    if (!pt) return;
+    var cx = xScale(pt.month);
+    var cy = yScale(pt.balance);
+    crosshair.setAttribute('x1', cx);
+    crosshair.setAttribute('x2', cx);
+    crosshair.setAttribute('opacity', 1);
+    hoverDot.setAttribute('cx', cx);
+    hoverDot.setAttribute('cy', cy);
+    hoverDot.setAttribute('opacity', 1);
+
+    var rect = chartHolder.getBoundingClientRect();
+    var svgRect = svg.getBoundingClientRect();
+    var scale = svgRect.width / VB_W;
+    var left = (svgRect.left - rect.left) + cx * scale;
+    var top = (svgRect.top - rect.top) + cy * scale;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.style.opacity = 1;
+    ttMonth.textContent = pt.month === 0 ? 'Today' : (monthName(pt.month) + ' · month ' + pt.month);
+    ttValue.textContent = formatINR(pt.balance);
+    ttBurn.textContent = 'Burn that month: ' + formatINR(pt.burn);
+  }
+
+  function hideTooltip() {
+    crosshair.setAttribute('opacity', 0);
+    hoverDot.setAttribute('opacity', 0);
+    tooltip.style.opacity = 0;
+  }
+
+  hitLayer.addEventListener('pointermove', function (e) { showTooltip(e.clientX, e.clientY); });
+  hitLayer.addEventListener('pointerleave', hideTooltip);
+  hitLayer.addEventListener('pointerdown', function (e) { showTooltip(e.clientX, e.clientY); });
+
+  function update() {
+    var corpus = parseFloat(corpusInput.value) || 0;
+    var burn = parseFloat(burnInput.value) || 0;
+    var rate = parseFloat(returnInput.value) || 0;
+    var inflation = parseFloat(inflationInput.value) || 0;
+
+    corpusHint.textContent = formatINR(corpus);
+    burnHint.textContent = formatINR(burn) + ' / month, today';
+
+    if (corpus <= 0 || burn <= 0) {
+      heroValue.innerHTML = '—';
+      statSub.textContent = 'Enter a corpus and monthly burn to see your runway.';
+      indefiniteNote.style.display = 'none';
+      burnPctValue.textContent = '—';
+      depleteDateValue.textContent = '—';
+      return;
+    }
+
+    var result = computeSeries(corpus, burn, rate, inflation);
+
+    var assumptionParts = [];
+    if (rate > 0) assumptionParts.push('your corpus earning ' + rate + '%/yr');
+    if (inflation > 0) assumptionParts.push('your burn growing ' + inflation + '%/yr with inflation');
+    var assumptionText = assumptionParts.length ? ', assuming ' + assumptionParts.join(' and ') : ', assuming a flat burn with no growth on the corpus';
+
+    if (!result.depleted) {
+      heroValue.innerHTML = '50+ <small>years</small>';
+      indefiniteNote.style.display = 'block';
+      indefiniteNote.textContent = 'At this return rate, growth on the balance keeps outpacing your (inflation-adjusted) burn — the corpus doesn’t run out within 50 years.';
+      var lastPt = result.points[result.points.length - 1];
+      statSub.textContent = 'Projected balance after 50 years: ' + formatINR(lastPt.balance) + ' (monthly burn by then: ' + formatINR(lastPt.burn) + ')' + assumptionText + '.';
+      depleteDateValue.textContent = 'Beyond 50 yrs';
+      chartCaption.textContent = 'Projected balance, month by month, over a 50-year horizon.';
+    } else {
+      var ym = monthsToYM(result.months);
+      var yLabel = ym.years === 1 ? 'year' : 'years';
+      var mLabel = ym.months === 1 ? 'month' : 'months';
+      heroValue.innerHTML = ym.years + ' <small>' + yLabel + (ym.months > 0 ? ', ' + ym.months + ' ' + mLabel : '') + '</small>';
+      indefiniteNote.style.display = 'none';
+      statSub.innerHTML = '≈ <strong>' + result.months + ' months</strong> of runway' + assumptionText;
+      depleteDateValue.textContent = monthName(result.months);
+      chartCaption.textContent = 'Projected balance, month by month, until it hits zero (' + monthName(result.months) + ').' + (inflation > 0 ? ' Burn line grows each year to hold your lifestyle steady.' : '');
+    }
+
+    burnPctValue.textContent = ((burn / corpus) * 100).toFixed(2) + '%';
+
+    render(result.points, result.depleted);
+    hideTooltip();
+  }
+
+  corpusInput.addEventListener('input', update);
+  burnInput.addEventListener('input', update);
+  returnInput.addEventListener('input', update);
+  inflationInput.addEventListener('input', update);
+
+  // theme toggle
+  function setTheme(theme) {
+    if (theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var effectiveDark = theme ? theme === 'dark' : prefersDark;
+    themeToggle.textContent = effectiveDark ? 'Light mode' : 'Dark mode';
+  }
+  var manualTheme = null;
+  setTheme(null);
+  themeToggle.addEventListener('click', function () {
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var currentlyDark = manualTheme ? manualTheme === 'dark' : prefersDark;
+    manualTheme = currentlyDark ? 'light' : 'dark';
+    setTheme(manualTheme);
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
